@@ -99,6 +99,9 @@ function providers(opts: CompletionOptions, json?: JsonSchema): Provider[] {
         temperature,
         max_tokens: maxTokens,
         stream,
+        // gpt-oss models reason first; keep the reasoning out of the answer.
+        reasoning_effort: groq.reasoningEffort,
+        include_reasoning: false,
         ...(schema ? { response_format: { type: "json_object" } } : {}),
       }),
     });
@@ -297,7 +300,7 @@ export type ModerationResult = { flagged: boolean; category: string | null };
 export async function moderate(text: string, signal?: AbortSignal): Promise<ModerationResult> {
   const { moderation, mistral, groq } = getConfig();
   if (!moderation.enabled || !text.trim()) return { flagged: false, category: null };
-  if (!mistral.apiKey) return groq.apiKey ? moderateWithLlamaGuard(text, signal) : { flagged: false, category: null };
+  if (!mistral.apiKey) return groq.apiKey ? moderateWithGuardModel(text, signal) : { flagged: false, category: null };
 
   try {
     const res = await post(
@@ -325,33 +328,41 @@ export async function moderate(text: string, signal?: AbortSignal): Promise<Mode
   }
 }
 
-/** Llama Guard hazard codes that are blocked for a school audience, mapped to our category names. */
-const LLAMA_GUARD_BLOCK: Record<string, string> = {
-  S1: "violence_and_threats",
-  S2: "dangerous_and_criminal_content",
-  S3: "sexual",
-  S4: "sexual",
-  S9: "dangerous_and_criminal_content",
-  S10: "hate_and_discrimination",
-  S11: "selfharm",
-  S12: "sexual",
-};
+const GUARD_CATEGORIES = [
+  "sexual",
+  "hate_and_discrimination",
+  "violence_and_threats",
+  "dangerous_and_criminal_content",
+  "selfharm",
+] as const;
 
-/** Fallback moderation via Llama Guard on Groq, used only when no Mistral key is configured. */
-async function moderateWithLlamaGuard(text: string, signal?: AbortSignal): Promise<ModerationResult> {
+const GUARD_POLICY = `You are a content safety classifier for a school learning platform (students aged 6-17).
+Classify the USER content. Answer with exactly one token: safe, ${GUARD_CATEGORIES.join(", ")}.
+Educational discussion of history, science, biology, literature or health is safe.`;
+
+/** Fallback moderation via a safety model on Groq, used only when no Mistral key is configured. */
+async function moderateWithGuardModel(text: string, signal?: AbortSignal): Promise<ModerationResult> {
   const { groq } = getConfig();
   try {
     const res = await post(
       `${groq.baseUrl}/chat/completions`,
       groq.apiKey!,
-      { model: groq.guardModel, messages: [{ role: "user", content: text.slice(0, 12000) }], max_tokens: 20, temperature: 0 },
+      {
+        model: groq.guardModel,
+        messages: [
+          { role: "system", content: GUARD_POLICY },
+          { role: "user", content: text.slice(0, 12000) },
+        ],
+        max_tokens: 200,
+        temperature: 0,
+        reasoning_effort: "low",
+        include_reasoning: false,
+      },
       signal,
     );
     const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const verdict = (body.choices?.[0]?.message?.content ?? "").trim().toLowerCase();
-    if (!verdict.startsWith("unsafe")) return { flagged: false, category: null };
-    const codes = verdict.toUpperCase().match(/S\d+/g) ?? [];
-    const category = codes.map((c) => LLAMA_GUARD_BLOCK[c]).find(Boolean);
+    const category = GUARD_CATEGORIES.find((c) => verdict.includes(c));
     return category ? { flagged: true, category } : { flagged: false, category: null };
   } catch (err) {
     if (signal?.aborted) throw err;

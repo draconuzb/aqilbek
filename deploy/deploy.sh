@@ -14,7 +14,7 @@ PORT=3100
 SSH="ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new"
 
 echo "▶ Building…"
-npm run build
+NEXT_PUBLIC_SITE_URL="${SITE_URL:-https://bizdaoson.uz}" npm run build
 
 echo "▶ Packing standalone bundle…"
 rm -rf .deploy && mkdir -p .deploy/app
