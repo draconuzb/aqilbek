@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -12,6 +15,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { Logo, LogoMark } from "@/components/brand/logo";
+import { GuestChat } from "@/components/landing/guest-chat";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { SUBJECT_OPTIONS } from "@/lib/constants";
@@ -122,10 +126,10 @@ export default function LandingPage() {
                   Kirish
                 </Link>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">Bepul · 1–11-sinflar · O‘zbek, rus, ingliz tillarida</p>
+              <p className="mt-4 text-sm text-muted-foreground">Bepul · 1–11-sinflar · O‘zbek, rus, ingliz tillarida · 3 ta savolni ro‘yxatdan o‘tmasdan sinab ko‘ring 👉</p>
             </div>
 
-            <HeroPreview />
+            <GuestChat />
           </div>
         </section>
 
@@ -204,6 +208,22 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Creator */}
+        <section id="yaratuvchi" className="scroll-mt-20 px-4 pb-20 sm:px-6">
+          <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 rounded-3xl border bg-card p-6 sm:flex-row sm:p-10">
+            <CreatorPhoto />
+            <div className="text-center sm:text-left">
+              <p className="text-sm font-semibold tracking-wider text-primary uppercase">Loyiha yaratuvchisi</p>
+              <h2 className="mt-2 text-3xl font-bold">{CREATOR.name}</h2>
+              <p className="mt-1 font-medium text-muted-foreground">Aqilbek.uz asoschisi va yaratuvchisi</p>
+              <p className="mt-4 max-w-lg text-muted-foreground">
+                Aqilbek.uz har bir o‘quvchiga istalgan vaqtda mavzularni tushunishga, mashq qilishga va bilimini
+                mustahkamlashga yordam beradigan aqlli yordamchi bo‘lishi uchun yaratildi.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="px-4 pb-20 sm:px-6">
           <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-12">
@@ -227,7 +247,10 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <LogoMark className="size-6" />
             <span>
-              © Aqilbek.uz — <span className="italic">Bilimingga aqlli yordamchi.</span>
+              © Aqilbek.uz — <span className="italic">Bilimingga aqlli yordamchi.</span> Yaratuvchi:{" "}
+              <a href="#yaratuvchi" className="font-medium text-foreground hover:underline">
+                {CREATOR.name}
+              </a>
             </span>
           </div>
           <div className="flex gap-5">
@@ -240,46 +263,33 @@ export default function LandingPage() {
   );
 }
 
+const CREATOR = { name: "Odina Soliyeva", initials: "OS", photo: "/creator.jpg" };
+
+/** Photo from public/creator.jpg when present (checked at build time), otherwise initials. */
+function CreatorPhoto() {
+  const hasPhoto = existsSync(path.join(process.cwd(), "public", CREATOR.photo.slice(1)));
+  return hasPhoto ? (
+    <Image
+      src={CREATOR.photo}
+      alt={CREATOR.name}
+      width={176}
+      height={220}
+      unoptimized
+      className="h-[220px] w-44 shrink-0 rounded-2xl object-cover object-top shadow-md"
+    />
+  ) : (
+    <span className="flex size-36 shrink-0 items-center justify-center rounded-full bg-brand-soft text-4xl font-bold text-primary">
+      {CREATOR.initials}
+    </span>
+  );
+}
+
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
       <p className="text-sm font-semibold uppercase tracking-wider text-primary">{eyebrow}</p>
       <h2 className="mt-2 text-3xl font-bold sm:text-4xl">{title}</h2>
       {subtitle && <p className="mt-3 text-muted-foreground">{subtitle}</p>}
-    </div>
-  );
-}
-
-/** Static illustration of a tutoring exchange. */
-function HeroPreview() {
-  return (
-    <div className="relative mx-auto w-full max-w-md" aria-hidden>
-      <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/15 to-sun/15 blur-2xl" />
-      <div className="rounded-3xl border bg-card p-4 shadow-xl shadow-primary/5 sm:p-5">
-        <div className="flex items-center gap-2.5 border-b pb-3">
-          <LogoMark className="size-7" />
-          <div>
-            <p className="text-sm font-semibold">Aqilbek</p>
-            <p className="text-xs text-muted-foreground">Matematika · 7-sinf</p>
-          </div>
-        </div>
-        <div className="space-y-3 pt-4 text-sm">
-          <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-primary-foreground">
-            Kasrlarni qo‘shishni tushuntirib ber
-          </div>
-          <div className="max-w-[92%] space-y-2 rounded-2xl rounded-bl-md bg-muted px-4 py-3">
-            <p>
-              Albatta! 😊 Kasrlarni qo‘shish uchun avval <b>maxrajlarni bir xil</b> qilamiz.
-            </p>
-            <p className="rounded-lg bg-card px-3 py-2 font-mono text-[13px]">1/2 + 1/3 = 3/6 + 2/6 = 5/6</p>
-            <p className="text-muted-foreground">Endi o‘zing sinab ko‘r: 1/4 + 2/4 = ?</p>
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <span className="rounded-full border bg-background px-3 py-1 text-xs">Menga 5 ta mashq tuzib ber</span>
-            <span className="rounded-full border bg-background px-3 py-1 text-xs">Qisqa qilib ber</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

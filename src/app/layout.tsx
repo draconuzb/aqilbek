@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   description:
     "Aqilbek — maktab o‘quvchilari uchun AI yordamchi: mavzularni sodda tushuntiradi, testlar tuzadi va bilimni mustahkamlashga yordam beradi.",
   applicationName: "Aqilbek.uz",
+  authors: [{ name: "Odina Soliyeva" }],
+  creator: "Odina Soliyeva",
   openGraph: {
     title: "Aqilbek.uz — Bilimingga aqlli yordamchi",
     description: "Savolingni ber. Aqilbek bilan o‘rgan.",

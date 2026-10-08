@@ -102,6 +102,18 @@ FORMAT
 ${MODE_INSTRUCTIONS[mode]}`;
 }
 
+/** Landing-page visitors: unknown student, short answers, gentle nudge to register for more. */
+export function buildGuestSystemPrompt() {
+  return `${buildSystemPrompt(
+    { name: "", grade: null, subjects: [], currentSubject: null, preferredLanguage: "auto" },
+    "explain",
+  )}
+
+GUEST MODE
+The visitor is trying Aqilbek before registering. Keep answers short and clear (at most ~200 words), still with one simple example.
+If the grade matters, assume grade 7. Do not ask for personal information.`;
+}
+
 const DIFFICULTY_TEXT: Record<Difficulty, string> = {
   easy: "easy (basic recall and simple application)",
   medium: "medium (understanding and standard problems)",

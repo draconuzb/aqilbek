@@ -6,13 +6,13 @@ import { useState } from "react";
 import { Loader2Icon, MailCheckIcon } from "lucide-react";
 import { GoogleButton } from "@/components/auth/google-button";
 import { Button } from "@/components/ui/button";
-import { Field, NativeSelect } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { GRADES, LIMITS, SUBJECT_OPTIONS } from "@/lib/constants";
+import { LIMITS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 
-type Errors = Partial<Record<"firstName" | "email" | "password" | "confirm" | "grade" | "form", string>>;
+type Errors = Partial<Record<"firstName" | "email" | "password" | "confirm" | "form", string>>;
 
 function validate(form: FormData): Errors {
   const errors: Errors = {};
@@ -26,7 +26,6 @@ function validate(form: FormData): Errors {
   if (password.length < 8) errors.password = "Parol kamida 8 ta belgidan iborat bo‘lsin.";
   else if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) errors.password = "Parolda harf va raqam bo‘lsin.";
   if (confirm !== password) errors.confirm = "Parollar mos kelmadi.";
-  if (!form.get("grade")) errors.grade = "Sinfingizni tanlang.";
   return errors;
 }
 
@@ -50,11 +49,8 @@ export function RegisterForm() {
       password: String(form.get("password")),
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
-        data: {
-          first_name: String(form.get("firstName")).trim(),
-          grade: Number(form.get("grade")),
-          main_subject: String(form.get("mainSubject") ?? ""),
-        },
+        // Grade and subjects are chosen right after sign-up, in onboarding.
+        data: { first_name: String(form.get("firstName")).trim() },
       },
     });
 
@@ -104,24 +100,6 @@ export function RegisterForm() {
           </Field>
           <Field label="Parolni tasdiqlang" htmlFor="confirm" error={errors.confirm}>
             <Input id="confirm" name="confirm" type="password" autoComplete="new-password" className="h-11" aria-invalid={!!errors.confirm} />
-          </Field>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Sinf" htmlFor="grade" error={errors.grade}>
-            <NativeSelect id="grade" name="grade" defaultValue="" aria-invalid={!!errors.grade}>
-              <option value="" disabled>Tanlang</option>
-              {GRADES.map((g) => (
-                <option key={g} value={g}>{g}-sinf</option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Field label="Asosiy fan / yo‘nalish" htmlFor="mainSubject">
-            <NativeSelect id="mainSubject" name="mainSubject" defaultValue="">
-              <option value="">Keyinroq tanlayman</option>
-              {SUBJECT_OPTIONS.map((s) => (
-                <option key={s.slug} value={s.slug}>{s.name}</option>
-              ))}
-            </NativeSelect>
           </Field>
         </div>
         {errors.form && (

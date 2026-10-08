@@ -20,7 +20,7 @@ const schema = z.object({
   GROQ_API_KEY: z.string().min(1).optional(),
   GROQ_API_URL: z.url().default("https://api.groq.com/openai/v1"),
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-120b"),
-  GROQ_GUARD_MODEL: z.string().min(1).default("openai/gpt-oss-safeguard-20b"),
+  GROQ_GUARD_MODEL: z.string().min(1).default("openai/gpt-oss-20b"),
   GROQ_REASONING_EFFORT: z.enum(["low", "medium", "high"]).default("medium"),
   AI_TEMPERATURE: z.coerce.number().min(0).max(1.5).default(0.4),
   AI_MAX_TOKENS: z.coerce.number().int().min(128).max(16000).default(2048),
@@ -38,6 +38,8 @@ const schema = z.object({
   LIMIT_CHAT_PER_DAY: z.coerce.number().int().min(0).default(60),
   LIMIT_GENERATIONS_PER_DAY: z.coerce.number().int().min(0).default(15),
   LIMIT_REQUESTS_PER_MINUTE: z.coerce.number().int().min(1).default(8),
+  LIMIT_GUEST_QUESTIONS: z.coerce.number().int().min(0).default(3),
+  LIMIT_GUEST_PER_MINUTE: z.coerce.number().int().min(1).default(20),
   APP_TIMEZONE: z.string().default("Asia/Tashkent"),
 });
 
@@ -88,6 +90,10 @@ function buildConfig() {
       chatPerDay: env.LIMIT_CHAT_PER_DAY,
       generationsPerDay: env.LIMIT_GENERATIONS_PER_DAY,
       requestsPerMinute: env.LIMIT_REQUESTS_PER_MINUTE,
+      /** Free questions on the landing page before registration (per IP, per day). */
+      guestQuestions: env.LIMIT_GUEST_QUESTIONS,
+      /** Total guest questions per minute across all visitors (cost guard). */
+      guestPerMinute: env.LIMIT_GUEST_PER_MINUTE,
     },
     timezone: env.APP_TIMEZONE,
   };

@@ -14,6 +14,8 @@ export const ERRORS = {
   invalidInput: "Ma’lumotlar noto‘g‘ri kiritildi. Iltimos, tekshirib qayta urinib ko‘ring.",
   notFound: "Ma’lumot topilmadi.",
   generic: "Nimadir xato ketdi. Iltimos, qayta urinib ko‘ring.",
+  guestLimit: "Bepul savollar tugadi. Davom etish uchun ro‘yxatdan o‘ting — bu bepul va bir daqiqa vaqt oladi! 🎓",
+  guestBusy: "Hozir mehmonlar juda ko‘p. Bir daqiqadan keyin urinib ko‘ring yoki ro‘yxatdan o‘ting.",
   quizInvalid: "Test tuzishda xatolik bo‘ldi. Iltimos, qayta urinib ko‘ring yoki mavzuni aniqroq yozing.",
 } as const;
 

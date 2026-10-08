@@ -116,4 +116,5 @@ export type ChatStreamEvent =
   | { type: "delta"; text: string }
   | { type: "replace"; text: string }
   | { type: "done"; messageId: string | null }
+  | { type: "guest"; remaining: number }
   | { type: "error"; message: string };

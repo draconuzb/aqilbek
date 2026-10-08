@@ -94,6 +94,7 @@ export type SavedType = (typeof SAVED_TYPES)[number]["id"];
 /** Input limits enforced on both client (UX) and server (security). */
 export const LIMITS = {
   messageMaxChars: 4000,
+  guestMessageMaxChars: 1000,
   titleMaxChars: 80,
   topicMaxChars: 150,
   quizMinQuestions: 3,

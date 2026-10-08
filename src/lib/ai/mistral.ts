@@ -130,14 +130,15 @@ async function post(
   apiKey: string,
   body: unknown,
   signal?: AbortSignal,
-  { streaming = false } = {},
+  { streaming = false, maxRetries, timeoutMs }: { streaming?: boolean; maxRetries?: number; timeoutMs?: number } = {},
 ): Promise<Response> {
   const cfg = getConfig().mistral;
+  const retries = maxRetries ?? cfg.maxRetries;
   let lastError: unknown;
 
-  for (let attempt = 0; attempt <= cfg.maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
     const timeout = new AbortController();
-    const timer = setTimeout(() => timeout.abort(), cfg.timeoutMs);
+    const timer = setTimeout(() => timeout.abort(), timeoutMs ?? cfg.timeoutMs);
     const combined = signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal;
     try {
       const res = await fetch(url, {
@@ -293,6 +294,9 @@ async function* readSse(body: ReadableStream<Uint8Array>, onUsage?: (usage: Usag
 
 export type ModerationResult = { flagged: boolean; category: string | null };
 
+/** Moderation must never stall a student's answer: one quick attempt, then fail open. */
+const MODERATION_REQUEST = { maxRetries: 0, timeoutMs: 8000 };
+
 /**
  * Classifies text with the Mistral moderation model. Fails open on API errors so an
  * outage does not block learning; `safe_prompt` and the system prompt still apply.
@@ -308,6 +312,7 @@ export async function moderate(text: string, signal?: AbortSignal): Promise<Mode
       mistral.apiKey,
       { model: mistral.moderationModel, input: [text.slice(0, 20000)] },
       signal,
+      MODERATION_REQUEST,
     );
     const body = (await res.json()) as {
       results?: { categories?: Record<string, boolean>; category_scores?: Record<string, number> }[];
@@ -359,6 +364,7 @@ async function moderateWithGuardModel(text: string, signal?: AbortSignal): Promi
         include_reasoning: false,
       },
       signal,
+      MODERATION_REQUEST,
     );
     const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const verdict = (body.choices?.[0]?.message?.content ?? "").trim().toLowerCase();

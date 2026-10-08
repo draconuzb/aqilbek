@@ -9,23 +9,30 @@ export type ChatRequestBody = {
   regenerate?: boolean;
 };
 
+export type GuestChatBody = {
+  message: string;
+  history: { role: "user" | "assistant"; content: string }[];
+};
+
 export type StreamOutcome =
   | { kind: "stream" }
   | { kind: "blocked"; reply: string }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string }
+  | { kind: "limit"; message: string };
 
 /**
  * POSTs to /api/chat and dispatches NDJSON events as they arrive.
  * Non-stream JSON responses are either friendly errors or safety blocks.
  */
 export async function streamChat(
-  body: ChatRequestBody,
+  body: ChatRequestBody | GuestChatBody,
   signal: AbortSignal,
   onEvent: (event: ChatStreamEvent) => void,
+  url = "/api/chat",
 ): Promise<StreamOutcome> {
   let res: Response;
   try {
-    res = await fetch("/api/chat", {
+    res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -41,6 +48,7 @@ export async function streamChat(
     const data = (await res.json().catch(() => ({}))) as { error?: string; blocked?: boolean; reply?: string };
     if (data.blocked && data.reply) return { kind: "blocked", reply: data.reply };
     if (res.status === 401) return { kind: "error", message: ERRORS.unauthorized };
+    if (res.status === 429 && data.error === ERRORS.guestLimit) return { kind: "limit", message: data.error };
     return { kind: "error", message: data.error ?? ERRORS.aiUnavailable };
   }
   if (!res.body) return { kind: "error", message: ERRORS.aiUnavailable };

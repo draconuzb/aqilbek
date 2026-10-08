@@ -60,3 +60,10 @@ export const quizAttemptSchema = z.object({
   quizId: z.uuid(),
   answers: z.array(z.number().int().min(-1).max(3)).max(LIMITS.quizMaxQuestions),
 });
+
+export const guestChatSchema = z.object({
+  message: z.string().trim().min(1).max(LIMITS.guestMessageMaxChars),
+  history: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(LIMITS.messageMaxChars) }))
+    .max(6),
+});

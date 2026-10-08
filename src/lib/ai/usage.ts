@@ -44,7 +44,8 @@ export function startOfToday(timeZone = getConfig().timezone) {
   }).formatToParts(now);
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
   const zonedAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
-  const offsetMs = zonedAsUtc - now.getTime();
+  // Round to whole minutes: `zonedAsUtc` has no milliseconds, `now` does.
+  const offsetMs = Math.round((zonedAsUtc - now.getTime()) / 60_000) * 60_000;
   const midnightZonedAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"));
   return new Date(midnightZonedAsUtc - offsetMs).toISOString();
 }
@@ -123,4 +124,43 @@ export async function logUsage(
     safety_category: entry.safetyCategory ?? null,
   });
   if (error) console.error("[usage] failed to log", { code: error.code });
+}
+
+// ---------------------------------------------------------------------------
+// Guests (landing page, no account). Single-instance in-memory counters: the
+// VPS runs one Node process. Guest prompts and answers are never stored.
+// ---------------------------------------------------------------------------
+
+const guestDaily = new Map<string, { day: string; count: number }>();
+let guestMinute: number[] = [];
+
+/** Reserves one guest question for this IP; returns how many remain afterwards. */
+export function takeGuestQuestion(ip: string): number {
+  const { limits } = getConfig();
+  const today = startOfToday();
+  const now = Date.now();
+
+  guestMinute = guestMinute.filter((t) => t > now - 60_000);
+  if (guestMinute.length >= limits.guestPerMinute) throw new AppError("guestBusy", 429);
+
+  const entry = guestDaily.get(ip);
+  const used = entry && entry.day === today ? entry.count : 0;
+  if (used >= limits.guestQuestions) throw new AppError("guestLimit", 429);
+
+  guestDaily.set(ip, { day: today, count: used + 1 });
+  guestMinute.push(now);
+  if (guestDaily.size > 20000) {
+    for (const [key, value] of guestDaily) if (value.day !== today) guestDaily.delete(key);
+  }
+  return limits.guestQuestions - used - 1;
+}
+
+/** Real client IP behind Cloudflare + nginx. */
+export function clientIp(headers: Headers) {
+  return (
+    headers.get("cf-connecting-ip") ??
+    headers.get("x-real-ip") ??
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
 }
