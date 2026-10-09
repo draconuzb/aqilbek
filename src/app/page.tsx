@@ -263,7 +263,7 @@ export default function LandingPage() {
   );
 }
 
-const CREATOR = { name: "Odina Soliyeva", initials: "OS", photo: "/creator.jpg" };
+const CREATOR = { name: "Abduraxmon Isroilov", initials: "AI", photo: "/creator.jpg" };
 
 /** Photo from public/creator.jpg when present (checked at build time), otherwise initials. */
 function CreatorPhoto() {
